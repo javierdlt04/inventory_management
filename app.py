@@ -17,7 +17,7 @@ if escenario_selec:
     df_consumo, df_embarque = cargar_datos_escenario(ruta_completa)
     
     if df_consumo is not None:
-        st.subheader("Análisis de Inventario")
+        st.subheader("Inventario Full Year")
         
         # Llamamos a tu función de gráfica
         figura = graficar_inventario_agentes(df_consumo)
