@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import zipfile
+import io
 
 def cargar_datos_escenario(ruta_escenario):
     """
@@ -76,3 +78,19 @@ def graficar_inventario_agentes(df):
     plt.tight_layout()
     
     return fig
+
+def preparar_descarga_escenario(ruta_escenario):
+    """
+    Comprime todos los archivos de la carpeta del escenario en un archivo ZIP en memoria.
+    """
+    # Creamos un buffer en memoria para el archivo ZIP
+    buf = io.BytesIO()
+    
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for root, dirs, files in os.walk(ruta_escenario):
+            for file in files:
+                ruta_completa = os.path.join(root, file)
+                # El nombre dentro del zip será solo el nombre del archivo
+                z.write(ruta_completa, arcname=file)
+    
+    return buf.getvalue()
