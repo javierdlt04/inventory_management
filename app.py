@@ -1,19 +1,28 @@
+# app.py
 import streamlit as st
-import pandas as pd
-import plotly.express as px
+import os
+from funciones_lng import cargar_datos_escenario, graficar_inventario_agentes
 
-st.set_page_config(page_title="Reportería LNG", layout="wide")
+st.title("Sistema de Gestión de Inventario GNL")
 
-st.title("Control de Suministro de Combustible")
+# Selección de escenario (lo que ya tenías)
+DATA_PATH = "DATA"
+escenarios = [f for f in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, f))]
+escenario_selec = st.sidebar.selectbox("Selecciona un Escenario", escenarios)
 
-# Sidebar para filtros
-pais = st.sidebar.selectbox("Selecciona el Activo", ["Panamá", "Chile", "Rep. Dominicana"])
-
-# Simulación de carga de datos
-st.subheader(f"Análisis de inventarios - {pais}")
-# Aquí llamarías a tus funciones de transformación
-st.info("Cargando datos transformados de la base de datos...")
-
-# Gráfica de ejemplo
-# fig = px.line(df, x='fecha', y='nivel_tanque')
-# st.plotly_chart(fig)
+if escenario_selec:
+    ruta_completa = os.path.join(DATA_PATH, escenario_selec)
+    
+    # Llamamos a tu función
+    df_consumo, df_embarque = cargar_datos_escenario(ruta_completa)
+    
+    if df_consumo is not None:
+        st.subheader("Análisis de Inventario")
+        
+        # Llamamos a tu función de gráfica
+        figura = graficar_inventario_agentes(df_consumo)
+        
+        # MOSTRAR EN STREAMLIT
+        st.pyplot(figura)
+    else:
+        st.error("No se pudieron cargar los datos de consumo.")
