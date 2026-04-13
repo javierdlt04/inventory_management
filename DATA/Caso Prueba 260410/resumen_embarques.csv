@@ -1,0 +1,18 @@
+﻿Nembarque,Status,Type,ADP Code,Terminal Code,Classification,Counterparty,USER,Transaction,Terminal,Arrival Window,End Window,Nomin. Q (MMBtu),Nomin. Q (m3),Actual Q (MMBtu),Actual Q (m3),Exp-FOB USD/MMBtu,Load Date
+,,Delivered,GANA-2026-01,CONO-2026-01,Import,TOTAL,GANA,Purchase,Panama,8-Jan-26,9-Jan-26,"3,217,500 ","143,000 ","3,157,955.13 ","142,196 ",,3-Jan-26
+,,Delivered,CLM-2026-01,CONO-2026-01,Import,TOTAL,CLM,Purchase,Panama,8-Jan-26,9-Jan-26,"200,045 ","8,891 ","195,044 ","8,782 ",,3-Jan-26
+,,Delivered,GATUN-2026-01a,CONO-2026-02,Import,TOTAL,GATUN,Purchase,Panama,19-Feb-26,20-Feb-26,"2,228,571 ","99,048 ","2,298,573 ","103,259.1 ",,14-Feb-26
+,,Delivered,GATUN-2026-01b,CONO-2026-02,Import,TOTAL,GATUN,Purchase,Panama,11-Mar-26,12-Mar-26,"1,200,000 ","52,000 ","1,187,061 ","51,535.2 ",,6-Mar-26
+,,Delivered,CLM-2026-02,CONO-2026-02,Import,TOTAL,CLM,Purchase,Panama,19-Feb-26,20-Feb-26,"102,857 ","4,571 ","105,428.43 ","4,736.2 ",,14-Feb-26
+,,,GATUN-2026-02,CONO-2026-03,Import,TOTAL,GATUN,Purchase,Panama,23-Mar-26,24-Mar-26,,,,,,18-Mar-26
+,,Delivered,CLM-2026-03,CONO-2026-03,Import,TOTAL,CLM,Purchase,Panama,11-Mar-26,12-Mar-26,"102,857 ","4,571 ","101,748 ","4,417.3 ",,6-Mar-26
+,,Signed,GATUN-2026-03,CONO-2026-04,Import,TOTAL,GATUN,Purchase,Panama,20-Apr-26,21-Apr-26,"3,428,571 ","152,381 ","3,428,571 ","152,381.0 ",,15-Apr-26
+,,Signed,CLM-2026-04,CONO-2026-04,Import,TOTAL,CLM,Purchase,Panama,20-Apr-26,21-Apr-26,"102,857 ","4,571 ","102,857 ","4,571 ",,15-Apr-26
+,,Signed,GATUN-2026-04,CONO-2026-05,Import,TOTAL,GATUN,Purchase,Panama,24-May-26,25-May-26,"3,428,571 ","152,381 ","3,428,571 ","152,381 ",,19-May-26
+,,Signed,CLM-2026-05,CONO-2026-05,Import,TOTAL,CLM,Purchase,Panama,24-May-26,25-May-26,"102,857 ","4,571 ","102,857 ","4,571 ",,19-May-26
+,,Signed,GATUN-2026-05,CONO-2026-06,Import,TOTAL,GATUN,Purchase,Panama,23-Jun-26,24-Jun-26,"3,428,571 ","152,381 ","3,428,571 ","152,381 ",,18-Jun-26
+,,Signed,CLM-2026-06,CONO-2026-06,Import,TOTAL,CLM,Purchase,Panama,23-Jun-26,24-Jun-26,"102,857 ","4,571 ","102,857 ","4,571 ",,18-Jun-26
+,,Signed,GATUN-2026-06,CONO-2026-07,Import,TOTAL,GATUN,Purchase,Panama,17-Aug-26,18-Aug-26,"3,428,571 ","152,381 ","3,428,571 ","152,381 ",,12-Aug-26
+,,Signed,CLM-2026-07,CONO-2026-07,Import,TOTAL,CLM,Purchase,Panama,17-Aug-26,18-Aug-26,"102,857 ","4,571 ","102,857 ","4,571 ",,12-Aug-26
+,,Prospective,GATUN-2026-07,CONO-2026-08,Import,TOTAL,GATUN,Purchase,Panama,9-Nov-26,10-Nov-26,"3,428,571 ","152,381 ","3,428,571 ","152,381 ",,4-Nov-26
+,,Signed,CLM-2026-08,CONO-2026-08,Import,TOTAL,CLM,Purchase,Panama,9-Nov-26,10-Nov-26,"102,857 ","4,571 ","102,857 ","4,571 ",,4-Nov-26
