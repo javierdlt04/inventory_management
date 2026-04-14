@@ -8,36 +8,17 @@ import json
 
 
 def cargar_datos_escenario(ruta_escenario):
-    """
-    Busca y carga los archivos csv específicos de un escenario.
-    """
-    # Definimos los nombres exactos que estamos buscando
-    file_consumo = "consumo_inventario.csv"
-    file_embarque = "resumen_embarques.csv"
-    
-    # Construimos las rutas completas
-    path_consumo = os.path.join(ruta_escenario, file_consumo)
-    path_embarque = os.path.join(ruta_escenario, file_embarque)
-    
-    # Inicializamos las variables como None por si no se encuentran los archivos
-    df_consumo = None
-    df_embarque = None
-
-    # Validación y carga de Consumo
-    if os.path.exists(path_consumo):
-        df_consumo = pd.read_csv(path_consumo)
-        print(f"✅ {file_consumo} cargado correctamente.")
-    else:
-        print(f"❌ Error: No se encontró {file_consumo} en la ruta {ruta_escenario}.")
-
-    # Validación y carga de Embarques
-    if os.path.exists(path_embarque):
-        df_embarque = pd.read_csv(path_embarque)
-        print(f"✅ {file_embarque} cargado correctamente.")
-    else:
-        print(f"❌ Error: No se encontró {file_embarque} en la ruta {ruta_escenario}.")
+    """Carga los tres archivos CSV principales del escenario."""
+    try:
+        df_consumo = pd.read_csv(os.path.join(ruta_escenario, "consumo_inventario.csv"))
+        df_embarque = pd.read_csv(os.path.join(ruta_escenario, "resumen_embarques.csv"))
+        # Nuevo: Carga de configuración de terminal
+        df_terminal = pd.read_csv(os.path.join(ruta_escenario, "terminal_configuration.csv"))
         
-    return df_consumo, df_embarque
+        return df_consumo, df_embarque, df_terminal
+    except Exception as e:
+        print(f"Error al cargar archivos CSV: {e}")
+        return None, None, None
 
 def cargar_configuracion(ruta_escenario):
     """
@@ -54,97 +35,102 @@ def cargar_configuracion(ruta_escenario):
                 return None
     return None
 
-def graficar_inventario_agentes(df_inventario, df_embarques=None, config=None):
+def graficar_inventario_agentes(df_inventario, df_embarques, df_config, config=None):
+    """
+    Genera la gráfica de inventario con:
+    - Fechas arriba y rotadas.
+    - Nombres de barcos abajo en vertical.
+    - Sombreado de área histórica vs proyectada.
+    - Líneas horizontales de Capacidad Máxima y Mínimo Operativo.
+    """
     # 1. Preparación de datos de inventario
     df_plot = df_inventario.copy()
     df_plot['Date'] = pd.to_datetime(df_plot['Datetext'].astype(str), format='%Y%m%d')
     
+    # Pivotar para tener agentes en columnas
     df_pivot = df_plot.pivot(index='Date', columns='Agente', values='Opening')
     df_pivot['TOTAL_SYSTEM'] = df_pivot.sum(axis=1)
 
-    # Definimos la fecha de corte para el sombreado
+    # Definir la fecha de corte para el sombreado desde el JSON
     fecha_corte = None
     if config and 'punto_corte_real' in config:
         fecha_corte = pd.to_datetime(config['punto_corte_real'])
 
-    # 2. Configuración de la Gráfica
-    # Aumentamos el margen superior e inferior para acomodar las etiquetas
-    fig, ax = plt.subplots(figsize=(16, 8), dpi=100)
-    plt.subplots_adjust(bottom=0.25, top=0.85) # Ajuste manual de márgenes
+    # 2. Configuración de la Figura
+    fig, ax = plt.subplots(figsize=(16, 9), dpi=100)
+    # Ajustamos márgenes: mucho espacio abajo para barcos y arriba para fechas
+    plt.subplots_adjust(bottom=0.25, top=0.82) 
     
-    # Graficar líneas de agentes
+    # --- LÓGICA DE LÍNEAS DE LÍMITE (TERMINAL CONFIG) ---
+    if df_config is not None:
+        for var_name, color, label_prefix in [
+            ('Capacidad_Max', 'red', 'Cap. Máxima'),
+            ('Minimo_Operativo', 'darkorange', 'Mín. Operativo')
+        ]:
+            # Buscamos el valor en el CSV de configuración
+            val_serie = df_config[df_config['Variable'] == var_name]['Value']
+            if not val_serie.empty:
+                v = val_serie.values[0]
+                ax.axhline(v, color=color, linestyle='--', linewidth=2, alpha=0.6, 
+                           label=f'{label_prefix} ({v:,.0f})', zorder=1)
+
+    # 3. Graficar Datos
+    # Líneas de cada Agente (más finas y transparentes)
     for agente in df_pivot.columns:
         if agente != 'TOTAL_SYSTEM':
-            ax.plot(df_pivot.index, df_pivot[agente], label=agente, alpha=0.5, linewidth=1)
+            ax.plot(df_pivot.index, df_pivot[agente], label=agente, alpha=0.4, linewidth=1.2)
     
-    # Graficar el TOTAL destacado
+    # Línea del Sistema Total (gruesa y roja)
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
-            color='red', linewidth=2.5, zorder=3)
+            color='red', linewidth=3, zorder=3)
 
-    # --- LÓGICA DE SOMBREADO (HISTÓRICO) ---
+    # 4. Sombreado Histórico (Área izquierda)
     if fecha_corte is not None:
         inicio_grafica = df_pivot.index.min()
+        # Sombreado gris muy suave
         ax.axvspan(inicio_grafica, fecha_corte, color='gray', alpha=0.10, zorder=0)
-        ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.4, zorder=1)
-        # Ajustamos el texto del punto de corte para que esté alineado abajo
+        # Línea divisoria negra punteada
+        ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1.2, alpha=0.5, zorder=2)
+        # Etiqueta de inicio de proyección en la base
         ax.text(fecha_corte, ax.get_ylim()[0], '  Inicio Proyección ➔', 
-                verticalalignment='bottom', fontsize=10, color='#444444', alpha=0.7)
+                verticalalignment='bottom', fontsize=10, color='#444444', alpha=0.8, fontweight='bold')
 
-    # 3. Estética de los Ejes
-    ax.set_title('Manejo de Inventario - Proyección de Suministro', fontsize=14, fontweight='bold')
+    # 5. Configuración de Ejes (Estilo Mejillones)
+    ax.set_title('Manejo de Inventario - Proyección de Suministro', fontsize=15, fontweight='bold', pad=30)
     ax.set_ylabel('Nivel de Inventario (Units)', fontsize=12)
-    
     ax.grid(True, which='both', linestyle='--', alpha=0.2, zorder=0)
     
-    # --- AJUSTE EJE X PRINCIPAL (FECHAS ARRIBA) ---
-    # Colocamos las fechas en la parte superior
+    # Mover Eje X a la parte superior
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
-    ax.set_xlabel('Fecha', fontsize=12)
-    
-    # Formatear el eje X principal
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    # Rotar fechas hacia arriba y centrarlas
-    plt.xticks(rotation=45, ha='left')
+    plt.xticks(rotation=45, ha='left', fontsize=9)
     
-    # --- NUEVA LÓGICA: ETIQUETAS BARCOS (ABAJO) ---
+    # 6. Etiquetas de Barcos (Eje inferior)
     if df_embarques is not None:
         df_embarques['Arrival_Date'] = pd.to_datetime(df_embarques['Arrival Window'])
+        x_min_lim, x_max_lim = ax.get_xlim()
+        y_min_lim, y_max_lim = ax.get_ylim()
         
-        # Obtenemos los límites de la gráfica para el posicionamiento
-        x_min, x_max = ax.get_xlim()
-        y_min, y_max = ax.get_ylim()
-        
-        # Calculamos un 'piso' visual para las etiquetas por debajo del 0
-        y_label_pos = y_min - (y_max - y_min) * 0.05
-        
-        for i, row in df_embarques.iterrows():
-            fecha_barco = row['Arrival_Date']
-            nombre_barco = row['Terminal Code']
+        for _, row in df_embarques.iterrows():
+            f_barco = row['Arrival_Date']
+            n_barco = row['Terminal Code']
             
-            # Verificamos que la fecha esté en el rango visible
-            if x_min <= mdates.date2num(fecha_barco) <= x_max:
-                # Línea vertical punteada sutil
-                ax.axvline(fecha_barco, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
+            # Solo graficar si cae dentro del rango de fechas mostrado
+            if x_min_lim <= mdates.date2num(f_barco) <= x_max_lim:
+                # Línea guía vertical punteada
+                ax.axvline(f_barco, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
                 
-                # Texto en vertical, azul y alineado arriba-centro
-                # Lo posicionamos 'y_label_pos' para que cuelgue del eje X inferior
-                ax.text(fecha_barco, y_min, f" {nombre_barco}", 
-                        rotation=90, 
-                        verticalalignment='top', # Importante: alinea la parte superior del texto
-                        horizontalalignment='center',
-                        fontsize=8, 
-                        color='blue',
-                        fontweight='bold',
-                        alpha=0.7)
-                
-        # Limpiamos las marcas del eje X inferior, solo dejamos la línea y los textos
+                # Nombre del barco colgando hacia abajo desde el fondo de la gráfica
+                ax.text(f_barco, y_min_lim, f" {n_barco}", 
+                        rotation=90, verticalalignment='top', horizontalalignment='center',
+                        fontsize=8, color='blue', fontweight='bold', alpha=0.7)
+        
+        # Desactivar los números del eje X inferior para que solo se vean los barcos
         ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
 
-    # Leyenda fuera del gráfico
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    
-    # plt.tight_layout() # tight_layout puede resetear los márgenes manuales, mejor no usarlo aquí
+    # 7. Leyenda
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=10, title="Agentes y Límites")
     
     return fig
 

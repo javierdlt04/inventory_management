@@ -13,18 +13,14 @@ escenario_selec = st.sidebar.selectbox("Selecciona un Escenario", escenarios)
 if escenario_selec:
     ruta_completa = os.path.join(DATA_PATH, escenario_selec)
     
-    # Llamamos a tu función
-    df_consumo, df_embarque = cargar_datos_escenario(ruta_completa)
-    
-    if df_consumo is not None:
-        st.subheader("Inventario Full Year")
+    # Carga de datos
+    df_c, df_e, df_t = cargar_datos_escenario(ruta_completa)
+
+    # Generación de gráfica
+    if df_c is not None:
+        fig = graficar_inventario_agentes(df_c, df_e, df_t, config=config)
+        st.pyplot(fig)
         
-        config = cargar_configuracion(ruta_completa)
-        # Llamamos a tu función de gráfica
-        figura = graficar_inventario_agentes(df_consumo, df_embarque, config=config)
-        
-        # MOSTRAR EN STREAMLIT
-        st.pyplot(figura)
     else:
         st.error("No se pudieron cargar los datos de consumo.")
 
