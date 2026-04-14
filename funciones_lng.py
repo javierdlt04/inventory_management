@@ -62,59 +62,58 @@ def graficar_inventario_agentes(df_inventario, df_embarques=None, config=None):
     df_pivot = df_plot.pivot(index='Date', columns='Agente', values='Opening')
     df_pivot['TOTAL_SYSTEM'] = df_pivot.sum(axis=1)
 
+    # Definimos la fecha de corte al inicio para que esté disponible en toda la función
+    fecha_corte = None
+    if config and 'punto_corte_real' in config:
+        fecha_corte = pd.to_datetime(config['punto_corte_real'])
+
     # 2. Configuración de la Gráfica
     fig, ax = plt.subplots(figsize=(16, 8), dpi=100)
     
-    # Graficar líneas de agentes y Total
+    # Graficar líneas de agentes
     for agente in df_pivot.columns:
         if agente != 'TOTAL_SYSTEM':
             ax.plot(df_pivot.index, df_pivot[agente], label=agente, alpha=0.5, linewidth=1)
     
+    # Graficar el TOTAL
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
             color='red', linewidth=2.5, zorder=3)
 
-    # --- NUEVA LÓGICA: ETIQUETAS DE BARCOS (Eje X) ---
+    # --- LÓGICA: ETIQUETAS DE BARCOS ---
     if df_embarques is not None:
-        # Aseguramos que la fecha sea datetime
         df_embarques['Arrival_Date'] = pd.to_datetime(df_embarques['Arrival Window'])
-        
-        # Obtenemos el límite inferior del eje Y para poner el texto abajo
         y_min, y_max = ax.get_ylim()
         
         for i, row in df_embarques.iterrows():
             fecha_barco = row['Arrival_Date']
             nombre_barco = row['Terminal Code']
             
-            # Solo dibujamos si la fecha está dentro del rango de la gráfica
-            if df_pivot.index.min() <= fecha_corte <= df_pivot.index.max():
-                # Dibujamos una línea vertical punteada muy tenue para el barco
+            # Verificamos que la fecha esté en el rango visible
+            if df_pivot.index.min() <= fecha_barco <= df_pivot.index.max():
                 ax.axvline(fecha_barco, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
                 
-                # Añadimos el texto en vertical
-                # El 'y' lo ponemos un poco por debajo del 0 o en la base del gráfico
+                # Ponemos el texto en el eje X (y_min)
                 ax.text(fecha_barco, y_min, f" {nombre_barco}", 
                         rotation=90, 
                         verticalalignment='bottom', 
-                        horizontalalignment='center',
                         fontsize=8, 
                         color='blue',
                         fontweight='bold',
                         alpha=0.7)
 
     # --- LÓGICA DE SOMBREADO (HISTÓRICO) ---
-    if config and 'punto_corte_real' in config:
-        fecha_corte = pd.to_datetime(config['punto_corte_real'])
+    if fecha_corte is not None:
         ax.axvspan(df_pivot.index.min(), fecha_corte, color='gray', alpha=0.12, zorder=0)
         ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.5)
+        ax.text(fecha_corte, ax.get_ylim()[1], '  Inicio Proyección ➔', 
+                verticalalignment='top', fontsize=10, color='#444444', alpha=0.8)
 
     # 3. Estética final
     ax.set_title('Manejo de Inventario - Proyección de Suministro', fontsize=14, fontweight='bold')
     ax.set_ylabel('Nivel de Inventario (Units)', fontsize=12)
-    
     ax.grid(True, which='both', linestyle='--', alpha=0.2)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
-    
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     
