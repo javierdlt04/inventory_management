@@ -54,65 +54,68 @@ def cargar_configuracion(ruta_escenario):
                 return None
     return None
 
-def graficar_inventario_agentes(df, config=None):
-    # 1. Preparación de datos
-    df_plot = df.copy()
-    
-    # Convertir Datetext (20260101) a formato datetime real
+def graficar_inventario_agentes(df_inventario, df_embarques=None, config=None):
+    # 1. Preparación de datos de inventario
+    df_plot = df_inventario.copy()
     df_plot['Date'] = pd.to_datetime(df_plot['Datetext'].astype(str), format='%Y%m%d')
     
-    # Crear un pivote para tener una columna por cada Agente
     df_pivot = df_plot.pivot(index='Date', columns='Agente', values='Opening')
-    
-    # Calcular la línea de TOTAL (Suma de todos los agentes por día)
     df_pivot['TOTAL_SYSTEM'] = df_pivot.sum(axis=1)
 
-    # 2. Configuración de la Gráfica (Estilo Ingeniería)
-    fig, ax = plt.subplots(figsize=(14, 7), dpi=100)
+    # 2. Configuración de la Gráfica
+    fig, ax = plt.subplots(figsize=(16, 8), dpi=100)
     
-    # Graficar cada Agente con líneas delgadas
+    # Graficar líneas de agentes y Total
     for agente in df_pivot.columns:
         if agente != 'TOTAL_SYSTEM':
-            ax.plot(df_pivot.index, df_pivot[agente], label=agente, alpha=0.6, linewidth=1.5)
+            ax.plot(df_pivot.index, df_pivot[agente], label=agente, alpha=0.5, linewidth=1)
     
-    # Graficar el TOTAL con una línea gruesa y destacada
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
-            color='red', linewidth=3, linestyle='-')
+            color='red', linewidth=2.5, zorder=3)
 
-    # --- LÓGICA DE SOMBREADO (ÁREA HISTÓRICA) ---
+    # --- NUEVA LÓGICA: ETIQUETAS DE BARCOS (Eje X) ---
+    if df_embarques is not None:
+        # Aseguramos que la fecha sea datetime
+        df_embarques['Arrival_Date'] = pd.to_datetime(df_embarques['Arrival Window'])
+        
+        # Obtenemos el límite inferior del eje Y para poner el texto abajo
+        y_min, y_max = ax.get_ylim()
+        
+        for i, row in df_embarques.iterrows():
+            fecha_barco = row['Arrival_Date']
+            nombre_barco = row['Terminal Code']
+            
+            # Solo dibujamos si la fecha está dentro del rango de la gráfica
+            if df_pivot.index.min() <= fecha_corte <= df_pivot.index.max():
+                # Dibujamos una línea vertical punteada muy tenue para el barco
+                ax.axvline(fecha_barco, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
+                
+                # Añadimos el texto en vertical
+                # El 'y' lo ponemos un poco por debajo del 0 o en la base del gráfico
+                ax.text(fecha_barco, y_min, f" {nombre_barco}", 
+                        rotation=90, 
+                        verticalalignment='bottom', 
+                        horizontalalignment='center',
+                        fontsize=8, 
+                        color='blue',
+                        fontweight='bold',
+                        alpha=0.7)
+
+    # --- LÓGICA DE SOMBREADO (HISTÓRICO) ---
     if config and 'punto_corte_real' in config:
-        try:
-            fecha_corte = pd.to_datetime(config['punto_corte_real'])
-            inicio_grafica = df_pivot.index.min()
-            
-            # Sombreado gris tenue para el pasado (Histórico)
-            # zorder=0 lo mantiene al fondo de las líneas
-            ax.axvspan(inicio_grafica, fecha_corte, color='gray', alpha=0.15, zorder=0, label='Histórico')
-            
-            # Línea vertical divisoria sutil
-            ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
-            
-            # Etiqueta indicativa
-            ax.text(fecha_corte, ax.get_ylim()[1], '  Inicio Proyección ➔', 
-                    verticalalignment='top', fontsize=10, color='#444444', alpha=0.8)
-        except Exception as e:
-            print(f"Error procesando sombreado: {e}")
+        fecha_corte = pd.to_datetime(config['punto_corte_real'])
+        ax.axvspan(df_pivot.index.min(), fecha_corte, color='gray', alpha=0.12, zorder=0)
+        ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.5)
 
-    # 3. Estética de los Ejes
-    ax.set_title('Niveles de Apertura de Inventario: Histórico vs Proyectado', fontsize=14, fontweight='bold')
-    ax.set_ylabel('Opening Level (Units)', fontsize=12)
-    ax.set_xlabel('Fecha', fontsize=12)
+    # 3. Estética final
+    ax.set_title('Manejo de Inventario - Proyección de Suministro', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Nivel de Inventario (Units)', fontsize=12)
     
-    # Cuadrícula (Grid) limpia
-    ax.grid(True, which='both', linestyle='--', alpha=0.3, zorder=0)
-    
-    # Formatear el eje X
+    ax.grid(True, which='both', linestyle='--', alpha=0.2)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     
-    # Leyenda fuera del gráfico
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title="Leyenda")
-    
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     
     return fig

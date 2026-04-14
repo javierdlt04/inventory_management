@@ -21,7 +21,7 @@ if escenario_selec:
         
         config = cargar_configuracion(ruta_completa)
         # Llamamos a tu función de gráfica
-        figura = graficar_inventario_agentes(df_consumo, config=config)
+        figura = graficar_inventario_agentes(df_consumo, df_embarque, config=config)
         
         # MOSTRAR EN STREAMLIT
         st.pyplot(figura)
