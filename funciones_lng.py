@@ -57,10 +57,9 @@ def graficar_inventario_agentes(df, config=None):
     # 1. Preparación de datos
     df_plot = df.copy()
     
-    # Convertir Datetext a formato datetime
+    # Aseguramos que la fecha del CSV sea datetime (formato 20260414)
     df_plot['Date'] = pd.to_datetime(df_plot['Datetext'].astype(str), format='%Y%m%d')
     
-    # Crear pivote
     df_pivot = df_plot.pivot(index='Date', columns='Agente', values='Opening')
     df_pivot['TOTAL_SYSTEM'] = df_pivot.sum(axis=1)
 
@@ -76,27 +75,37 @@ def graficar_inventario_agentes(df, config=None):
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
             color='red', linewidth=3, linestyle='-')
 
-    # --- NUEVA LÓGICA DE SOMBREADO (HISTÓRICO VS PROYECTADO) ---
+    # --- LÓGICA DE SOMBREADO REFORZADA ---
     if config and 'punto_corte_real' in config:
-        fecha_corte = pd.to_datetime(config['punto_corte_real'])
-        
-        # Sombreado para el área "REAL/HISTÓRICA" (Más oscuro)
-        ax.axvspan(df_pivot.index.min(), fecha_corte, 
-                   color='gray', alpha=0.15, label='Histórico')
-        
-        # Línea vertical divisoria
-        ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.8)
-        
-        # Etiqueta de texto para indicar el cambio
-        ax.text(fecha_corte, ax.get_ylim()[1], ' Inicio Proyección ➔', 
-                verticalalignment='top', fontsize=10, fontweight='bold', alpha=0.7)
+        try:
+            # Convertimos la fecha del JSON (2026-04-14) a datetime
+            # pd.to_datetime es inteligente y detecta los guiones automáticamente
+            fecha_corte = pd.to_datetime(config['punto_corte_real'])
+            
+            # Definimos el inicio y fin del sombreado basados en los datos
+            limite_izquierdo = df_pivot.index.min()
+            
+            # Validamos que la fecha de corte esté dentro del rango de la gráfica
+            if limite_izquierdo <= fecha_corte <= df_pivot.index.max():
+                # Dibujamos el área sombreada
+                ax.axvspan(limite_izquierdo, fecha_corte, 
+                           color='gray', alpha=0.2, zorder=0, label='Histórico')
+                
+                # Línea divisoria
+                ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1.2, alpha=0.8, zorder=2)
+                
+                # Etiqueta
+                ax.text(fecha_corte, ax.get_ylim()[1] * 0.95, '  PROYECCIÓN ➔', 
+                        fontsize=10, fontweight='bold', alpha=0.6)
+        except Exception as e:
+            print(f"Error al procesar el sombreado: {e}")
 
-    # 3. Estética de los Ejes
+    # 3. Estética
     ax.set_title('Niveles de Inventario: Histórico vs Proyectado', fontsize=14, fontweight='bold')
     ax.set_ylabel('Opening Level (Units)', fontsize=12)
     ax.set_xlabel('Fecha', fontsize=12)
     
-    ax.grid(True, which='both', linestyle='--', alpha=0.3)
+    ax.grid(True, which='both', linestyle='--', alpha=0.3, zorder=0)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     
