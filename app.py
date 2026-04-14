@@ -19,8 +19,9 @@ if escenario_selec:
     if df_consumo is not None:
         st.subheader("Inventario Full Year")
         
+        config = cargar_configuracion(ruta_completa)
         # Llamamos a tu función de gráfica
-        figura = graficar_inventario_agentes(df_consumo)
+        figura = graficar_inventario_agentes(df_consumo, config=config)
         
         # MOSTRAR EN STREAMLIT
         st.pyplot(figura)

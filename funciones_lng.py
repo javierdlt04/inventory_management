@@ -38,20 +38,18 @@ def cargar_datos_escenario(ruta_escenario):
     return df_consumo, df_embarque
 
 
-def graficar_inventario_agentes(df):
+def graficar_inventario_agentes(df, config=None):
     # 1. Preparación de datos
     df_plot = df.copy()
     
-    # Convertir Datetext (20260101) a formato datetime real
+    # Convertir Datetext a formato datetime
     df_plot['Date'] = pd.to_datetime(df_plot['Datetext'].astype(str), format='%Y%m%d')
     
-    # Crear un pivote para tener una columna por cada Agente
+    # Crear pivote
     df_pivot = df_plot.pivot(index='Date', columns='Agente', values='Opening')
-    
-    # Calcular la línea de TOTAL (Suma de todos los agentes por día)
     df_pivot['TOTAL_SYSTEM'] = df_pivot.sum(axis=1)
 
-    # 2. Configuración de la Gráfica (Estilo Ingeniería)
+    # 2. Configuración de la Gráfica
     fig, ax = plt.subplots(figsize=(14, 7), dpi=100)
     
     # Graficar cada Agente
@@ -63,18 +61,31 @@ def graficar_inventario_agentes(df):
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
             color='red', linewidth=3, linestyle='-')
 
+    # --- NUEVA LÓGICA DE SOMBREADO (HISTÓRICO VS PROYECTADO) ---
+    if config and 'punto_corte_real' in config:
+        fecha_corte = pd.to_datetime(config['punto_corte_real'])
+        
+        # Sombreado para el área "REAL/HISTÓRICA" (Más oscuro)
+        ax.axvspan(df_pivot.index.min(), fecha_corte, 
+                   color='gray', alpha=0.15, label='Histórico')
+        
+        # Línea vertical divisoria
+        ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1, alpha=0.8)
+        
+        # Etiqueta de texto para indicar el cambio
+        ax.text(fecha_corte, ax.get_ylim()[1], ' Inicio Proyección ➔', 
+                verticalalignment='top', fontsize=10, fontweight='bold', alpha=0.7)
+
     # 3. Estética de los Ejes
-    ax.set_title('Niveles de Apertura de Inventario por Agente y Total', fontsize=14, fontweight='bold')
+    ax.set_title('Niveles de Inventario: Histórico vs Proyectado', fontsize=14, fontweight='bold')
     ax.set_ylabel('Opening Level (Units)', fontsize=12)
     ax.set_xlabel('Fecha', fontsize=12)
     
-    ax.grid(True, which='both', linestyle='--', alpha=0.5)
-    
+    ax.grid(True, which='both', linestyle='--', alpha=0.3)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title="Agentes")
-    
     plt.tight_layout()
     
     return fig
