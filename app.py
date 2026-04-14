@@ -1,7 +1,7 @@
 # app.py
 import streamlit as st
 import os
-from funciones_lng import cargar_datos_escenario, graficar_inventario_agentes, preparar_descarga_escenario
+from funciones_lng import cargar_datos_escenario, graficar_inventario_agentes, preparar_descarga_escenario, cargar_configuracion
 
 st.title("Sistema de Gestión de Inventario GNL")
 

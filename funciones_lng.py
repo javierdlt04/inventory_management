@@ -5,6 +5,7 @@ import matplotlib.dates as mdates
 import zipfile
 import io
 
+
 def cargar_datos_escenario(ruta_escenario):
     """
     Busca y carga los archivos csv específicos de un escenario.
@@ -37,6 +38,20 @@ def cargar_datos_escenario(ruta_escenario):
         
     return df_consumo, df_embarque
 
+def cargar_configuracion(ruta_escenario):
+    """
+    Lee el archivo run_settings.json de la carpeta del escenario.
+    """
+    path_config = os.path.join(ruta_escenario, "run_settings.json")
+    
+    if os.path.exists(path_config):
+        with open(path_config, 'r') as f:
+            try:
+                return json.load(f)
+            except Exception as e:
+                print(f"❌ Error al leer el JSON: {e}")
+                return None
+    return None
 
 def graficar_inventario_agentes(df, config=None):
     # 1. Preparación de datos
