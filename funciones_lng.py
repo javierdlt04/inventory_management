@@ -75,30 +75,29 @@ def graficar_inventario_agentes(df, config=None):
     ax.plot(df_pivot.index, df_pivot['TOTAL_SYSTEM'], label='TOTAL SYSTEM', 
             color='red', linewidth=3, linestyle='-')
 
-    # --- LÓGICA DE SOMBREADO REFORZADA ---
+# --- PRUEBA DE COLOR EXTREMA ---
     if config and 'punto_corte_real' in config:
         try:
-            # Convertimos la fecha del JSON (2026-04-14) a datetime
-            # pd.to_datetime es inteligente y detecta los guiones automáticamente
+            # Convertimos la fecha del JSON a datetime
             fecha_corte = pd.to_datetime(config['punto_corte_real'])
             
-            # Definimos el inicio y fin del sombreado basados en los datos
+            # Forzamos los límites para asegurar que cubra toda la zona izquierda
             limite_izquierdo = df_pivot.index.min()
             
-            # Validamos que la fecha de corte esté dentro del rango de la gráfica
-            if limite_izquierdo <= fecha_corte <= df_pivot.index.max():
-                # Dibujamos el área sombreada
-                ax.axvspan(limite_izquierdo, fecha_corte, 
-                           color='gray', alpha=0.2, zorder=0, label='Histórico')
-                
-                # Línea divisoria
-                ax.axvline(fecha_corte, color='black', linestyle='--', linewidth=1.2, alpha=0.8, zorder=2)
-                
-                # Etiqueta
-                ax.text(fecha_corte, ax.get_ylim()[1] * 0.95, '  PROYECCIÓN ➔', 
-                        fontsize=10, fontweight='bold', alpha=0.6)
+            # Pintamos de NEGRO con opacidad alta (0.5) para que sea inconfundible
+            ax.axvspan(limite_izquierdo, fecha_corte, 
+                       color='black', alpha=0.5, zorder=0)
+            
+            # Dibujamos la línea divisoria muy gruesa
+            ax.axvline(fecha_corte, color='blue', linestyle='-', linewidth=3, zorder=5)
+            
+            # Texto en color brillante para que resalte
+            ax.text(fecha_corte, ax.get_ylim()[1] * 0.9, ' <--- HISTÓRICO', 
+                    color='blue', fontweight='bold', ha='right')
+                    
         except Exception as e:
-            print(f"Error al procesar el sombreado: {e}")
+            # Si hay un error, lo veremos en los logs de Streamlit
+            print(f"DEBUG: Error en sombreado: {e}")
 
     # 3. Estética
     ax.set_title('Niveles de Inventario: Histórico vs Proyectado', fontsize=14, fontweight='bold')
