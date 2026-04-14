@@ -16,11 +16,13 @@ if escenario_selec:
     # Carga de datos
     df_c, df_e, df_t = cargar_datos_escenario(ruta_completa)
 
+    config = cargar_configuracion(ruta_completa)
+
     # Generación de gráfica
     if df_c is not None:
         fig = graficar_inventario_agentes(df_c, df_e, df_t, config=config)
         st.pyplot(fig)
-        
+
     else:
         st.error("No se pudieron cargar los datos de consumo.")
 
